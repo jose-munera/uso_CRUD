@@ -8,11 +8,13 @@ import 'package:notas_app/models/nota.dart';
 class ResultScreen extends StatefulWidget {
   final List<Map<String, dynamic>> filas;
   final double notaMinima;
+  final double notaMaxima; // ← nueva
 
   const ResultScreen({
     super.key,
     required this.filas,
     required this.notaMinima,
+    required this.notaMaxima, // ← nueva
   });
 
   @override
@@ -33,14 +35,12 @@ class _ResultScreenState extends State<ResultScreen>
   void initState() {
     super.initState();
 
-    // ── Controller principal ──
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
     _animation = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
 
-    // ── Controller del casi (shake) ──
     _casiController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -49,44 +49,43 @@ class _ResultScreenState extends State<ResultScreen>
       CurvedAnimation(parent: _casiController, curve: Curves.elasticIn),
     );
 
-    // ── Controller del cohete (espiral) ──
     _coheteController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
     );
-    _coheteAnimation = TweenSequence<Offset>([
-      TweenSequenceItem(
-        tween: Tween(begin: Offset.zero, end: const Offset(1.5, -1.5)),
-        weight: 25,
-      ),
-      TweenSequenceItem(
-        tween: Tween(
-          begin: const Offset(1.5, -1.5),
-          end: const Offset(-1.5, -0.5),
-        ),
-        weight: 25,
-      ),
-      TweenSequenceItem(
-        tween: Tween(
-          begin: const Offset(-1.5, -0.5),
-          end: const Offset(-0.5, 1.5),
-        ),
-        weight: 25,
-      ),
-      TweenSequenceItem(
-        tween: Tween(begin: const Offset(-0.5, 1.5), end: Offset.zero),
-        weight: 25,
-      ),
-    ]).animate(
-      CurvedAnimation(parent: _coheteController, curve: Curves.easeInOut),
-    );
 
-    // ── Confeti ──
+    _coheteAnimation =
+        TweenSequence<Offset>([
+          TweenSequenceItem(
+            tween: Tween(begin: Offset.zero, end: const Offset(1.5, -1.5)),
+            weight: 25,
+          ),
+          TweenSequenceItem(
+            tween: Tween(
+              begin: const Offset(1.5, -1.5),
+              end: const Offset(-1.5, -0.5),
+            ),
+            weight: 25,
+          ),
+          TweenSequenceItem(
+            tween: Tween(
+              begin: const Offset(-1.5, -0.5),
+              end: const Offset(-0.5, 1.5),
+            ),
+            weight: 25,
+          ),
+          TweenSequenceItem(
+            tween: Tween(begin: const Offset(-0.5, 1.5), end: Offset.zero),
+            weight: 25,
+          ),
+        ]).animate(
+          CurvedAnimation(parent: _coheteController, curve: Curves.easeInOut),
+        );
+
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 3),
     );
 
-    // ── Lanzar animaciones según resultado ──
     final tipo = _tipoResultado();
 
     if (tipo == 'Aprobado') {
@@ -100,13 +99,12 @@ class _ResultScreenState extends State<ResultScreen>
       _coheteController.forward();
     }
 
-    // ── Guardar estado al mostrar resultado ──
     _guardarEstado();
   }
-  
+
   bool aprueba() {
-  return _calcularPromedio() >= widget.notaMinima;
-}
+    return _calcularPromedio() >= widget.notaMinima;
+  }
 
   @override
   void dispose() {
@@ -201,8 +199,9 @@ class _ResultScreenState extends State<ResultScreen>
     return necesita / pctFaltante;
   }
 
+  // ← usa notaMaxima en lugar de 100
   bool _esImposible() {
-    return _calcularNotaMinimaNecesaria() > 100;
+    return _calcularNotaMinimaNecesaria() > widget.notaMaxima;
   }
 
   String _tipoResultado() {
@@ -232,10 +231,8 @@ class _ResultScreenState extends State<ResultScreen>
         ),
       ),
       backgroundColor: const Color.fromARGB(255, 198, 198, 247),
-      body: Align(
-        alignment: Alignment.topCenter,
+      body: SingleChildScrollView(
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.7,
           margin: const EdgeInsets.only(
             top: 70,
             left: 24,
@@ -257,15 +254,12 @@ class _ResultScreenState extends State<ResultScreen>
             borderRadius: BorderRadius.circular(30),
             child: Stack(
               children: [
-                // ── Lágrimas (solo Casi) ──
                 if (tipo == 'Casi')
                   const Positioned.fill(child: LagrimasWidget()),
 
-                // ── Humo (solo Reprobado) ──
                 if (tipo == 'Reprobado')
                   const Positioned.fill(child: HumoWidget()),
 
-                // ── Confeti estrellas (solo Aprobado) ──
                 if (tipo == 'Aprobado')
                   Align(
                     alignment: Alignment.topCenter,
@@ -285,18 +279,16 @@ class _ResultScreenState extends State<ResultScreen>
                     ),
                   ),
 
-                // ── Contenido con scroll ──
                 SingleChildScrollView(
                   padding: const EdgeInsets.only(
                     top: 24,
                     left: 24,
                     right: 24,
-                    bottom: 80,
+                    bottom: 100,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      // ── Emoji con animaciones ──
                       SlideTransition(
                         position: tipo == 'Reprobado'
                             ? _coheteAnimation
@@ -311,9 +303,9 @@ class _ResultScreenState extends State<ResultScreen>
                             scale: _animation,
                             child: Text(
                               tipo == 'Aprobado'
-                                  ? '🌟'
+                                  ? '🌟🌟'
                                   : tipo == 'Casi'
-                                  ? '😭'
+                                  ? '😭🥹'
                                   : '🚀',
                               style: const TextStyle(fontSize: 70),
                             ),
@@ -395,8 +387,8 @@ class _ResultScreenState extends State<ResultScreen>
                               children: [
                                 Text(
                                   _esImposible()
-                                      ? '😔 Reprobado definitivamente'
-                                      : '🎯 Para aprobar necesitas:',
+                                      ? '😔 Reprobado Definitivamente'
+                                      : '🎯 Para Aprobar Necesitas:',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -408,16 +400,16 @@ class _ResultScreenState extends State<ResultScreen>
                                 const SizedBox(height: 8),
                                 if (!_esImposible())
                                   Text(
-                                    'Mínimo ${_calcularNotaMinimaNecesaria().toStringAsFixed(1)} pts en tus evaluaciones faltantes',
+                                    'Mínimo ${_calcularNotaMinimaNecesaria().toStringAsFixed(1)} PUNTOS en tus evaluaciones faltantes',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: Colors.grey,
                                     ),
                                   ),
                                 if (_esImposible())
-                                  const Text(
-                                    'Aunque saques 100 en las evaluaciones faltantes, no es suficiente para pasar.',
-                                    style: TextStyle(
+                                  Text(
+                                    'Aunque saques ${widget.notaMaxima.toStringAsFixed(1)} en las evaluaciones faltantes, no es suficiente para pasar.',
+                                    style: const TextStyle(
                                       fontSize: 13,
                                       color: Colors.grey,
                                     ),
@@ -430,7 +422,6 @@ class _ResultScreenState extends State<ResultScreen>
                   ),
                 ),
 
-                // ── Botón volver ──
                 Positioned(
                   bottom: 16,
                   left: 0,

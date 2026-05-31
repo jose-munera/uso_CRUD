@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "647643798659",
+    "project_id": "notometro-a4117",
+    "storage_bucket": "notometro-a4117.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647643798659:android:0c5671ada238c6a26fcfb6",
+        "android_client_info": {
+          "package_name": "com.example.notas_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYRh7VJKkrhzGPHZJxWXj9P1TgnhmLiXo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -15,13 +15,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final List<Map<String, dynamic>> _filas = [];
   double _notaMinima = 3.0;
-  double _notaMaxima = 5.0; // ← nueva
 
-  Future<void> _cargarConfiguracion() async {
+  Future<void> _cargarNotaMinima() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _notaMinima = prefs.getDouble('notaMinima') ?? 3.0;
-      _notaMaxima = prefs.getDouble('notaMaxima') ?? 5.0; // ← nueva
     });
   }
 
@@ -54,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _cargarConfiguracion(); // ← reemplaza _cargarNotaMinima
+    _cargarNotaMinima();
     _cargarEstadoAnterior();
   }
 
@@ -79,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     });
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       focusNode.requestFocus();
     });
   }
@@ -126,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         actions: [
+          // ← botón de materias
           IconButton(
             icon: const Icon(Icons.menu_book_rounded, color: Colors.black),
             tooltip: 'Mis Materias',
@@ -140,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(builder: (context) => SettingsScreen()),
               );
-              _cargarConfiguracion(); // ← recarga ambos valores al volver
+              _cargarNotaMinima();
             },
           ),
         ],
@@ -307,9 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           }
                                         }
                                         final numero = double.tryParse(text);
-                                        // ← usa _notaMaxima en lugar de 100
-                                        if (numero != null &&
-                                            numero > _notaMaxima) {
+                                        if (numero != null && numero > 100) {
                                           setState(
                                             () => _filas[i]['notaError'] = true,
                                           );
@@ -325,8 +322,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       filled: true,
                                       fillColor: const Color(0xFFF8F6FF),
                                       labelText: 'Nota',
-                                      errorText: (_filas[i]['notaError'] as bool)
-                                          ? '*máximo $_notaMaxima'
+                                      errorText:
+                                          (_filas[i]['notaError'] as bool)
+                                          ? '*máximo 100'
                                           : null,
                                       contentPadding:
                                           const EdgeInsets.symmetric(
@@ -448,28 +446,38 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ? IconButton(
                                         icon: Icon(
                                           Icons.add_circle_outline,
-                                          color: _totalPorcentaje() >= 100 ||
+                                          color:
+                                              _totalPorcentaje() >= 100 ||
                                                   notaController.text.isEmpty ||
                                                   pctController.text.isEmpty
                                               ? Colors.grey
                                               : const Color.fromARGB(
-                                                  255, 17, 221, 27),
+                                                  255,
+                                                  17,
+                                                  221,
+                                                  27,
+                                                ),
                                           size: 28,
                                         ),
                                         onPressed: _totalPorcentaje() >= 100
                                             ? null
                                             : () {
-                                                final nota = notaController.text;
+                                                final nota =
+                                                    notaController.text;
                                                 final pct = pctController.text;
                                                 if (nota.isEmpty ||
                                                     pct.isEmpty) {
-                                                  setState(() =>
-                                                      _filas[i]['filaError'] =
-                                                          true);
+                                                  setState(
+                                                    () =>
+                                                        _filas[i]['filaError'] =
+                                                            true,
+                                                  );
                                                 } else {
-                                                  setState(() =>
-                                                      _filas[i]['filaError'] =
-                                                          false);
+                                                  setState(
+                                                    () =>
+                                                        _filas[i]['filaError'] =
+                                                            false,
+                                                  );
                                                   _agregarFila();
                                                 }
                                               },
@@ -547,7 +555,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           builder: (context) => ResultScreen(
                             filas: _filas,
                             notaMinima: _notaMinima,
-                            notaMaxima: _notaMaxima, // ← nueva
                           ),
                         ),
                       );

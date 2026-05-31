@@ -11,7 +11,7 @@ class MateriaFormScreen extends StatefulWidget {
   const MateriaFormScreen({
     super.key,
     required this.service,
-    this.materia,
+    this.materia, // ← null = crear, con valor = editar
   });
 
   @override
@@ -19,43 +19,38 @@ class MateriaFormScreen extends StatefulWidget {
 }
 
 class _MateriaFormScreenState extends State<MateriaFormScreen> {
+  // ── Llave global del formulario ────────────
   final _formKey = GlobalKey<FormState>();
 
+  // ── Controllers ────────────────────────────
   final _nombreCtrl = TextEditingController();
   final _semestreCtrl = TextEditingController();
   final _creditosCtrl = TextEditingController();
-  final _notaFinalCtrl = TextEditingController();
 
   bool _guardando = false;
-  bool get _esEdicion => widget.materia != null;
 
   @override
   void initState() {
     super.initState();
-    if (_esEdicion) {
+    if (widget.materia != null) {
       _nombreCtrl.text = widget.materia!.nombre;
       _semestreCtrl.text = widget.materia!.semestre;
       _creditosCtrl.text = widget.materia!.creditos.toString();
-      if (widget.materia!.notaFinal != null) {
-        _notaFinalCtrl.text = widget.materia!.notaFinal!.toStringAsFixed(1);
-      }
     }
   }
 
+  // ── Guardar ────────────────────────────────
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _guardando = true);
 
-    final notaTexto = _notaFinalCtrl.text.trim();
-    final notaFinal = notaTexto.isNotEmpty ? double.tryParse(notaTexto) : null;
-
-    if (!_esEdicion) {
+    if (widget.materia == null) {
       // ── Modo crear ──
       await widget.service.agregarMateria(
         nombre: _nombreCtrl.text.trim(),
         semestre: _semestreCtrl.text.trim(),
         creditos: int.parse(_creditosCtrl.text.trim()),
-        notaFinal: notaFinal,
       );
     } else {
       // ── Modo editar ──
@@ -64,7 +59,6 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
         nombre: _nombreCtrl.text.trim(),
         semestre: _semestreCtrl.text.trim(),
         creditos: int.parse(_creditosCtrl.text.trim()),
-        notaFinal: notaFinal,
       );
     }
 
@@ -74,7 +68,9 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            !_esEdicion ? 'Materia guardada ✓' : 'Materia actualizada ✓',
+            widget.materia == null
+                ? 'Materia guardada ✓'
+                : 'Materia actualizada ✓',
           ),
           backgroundColor: const Color(0xFF2ECC9A),
         ),
@@ -88,7 +84,6 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
     _nombreCtrl.dispose();
     _semestreCtrl.dispose();
     _creditosCtrl.dispose();
-    _notaFinalCtrl.dispose();
     super.dispose();
   }
 
@@ -100,7 +95,7 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
         backgroundColor: const Color.fromARGB(255, 151, 119, 225),
         elevation: 0,
         title: Text(
-          !_esEdicion ? 'Nueva Materia ✏️' : 'Editar Materia ✏️',
+          widget.materia == null ? 'Nueva Materia ✏️' : 'Editar Materia ✏️',
           style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -124,7 +119,7 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
           ),
           padding: const EdgeInsets.all(20),
           child: Form(
-            key: _formKey,
+            key: _formKey, // ← llave asignada al Form
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -139,15 +134,18 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── Campo nombre ──
+                // ── Campo nombre (obligatorio) ──
                 TextFormField(
                   controller: _nombreCtrl,
-                  decoration: _inputDecoration('Nombre', 'ej: Cálculo Diferencial'),
+                  decoration: _inputDecoration(
+                    'Nombre',
+                    'ej: Cálculo Diferencial',
+                  ),
                   validator: FormValidators.nombreValido,
                 ),
                 const SizedBox(height: 16),
 
-                // ── Campo semestre ──
+                // ── Campo semestre (longitud mínima) ──
                 TextFormField(
                   controller: _semestreCtrl,
                   decoration: _inputDecoration('Semestre', 'ej: 2025-1'),
@@ -155,7 +153,7 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── Campo créditos ──
+                // ── Campo créditos (expresión regular) ──
                 TextFormField(
                   controller: _creditosCtrl,
                   keyboardType: TextInputType.number,
@@ -163,38 +161,6 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
                   decoration: _inputDecoration('Créditos', 'ej: 3'),
                   validator: FormValidators.creditosValido,
                 ),
-
-                // ── Campo nota final ──
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 12),
-                const Text(
-                  'NOTA FINAL',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF8B83B0),
-                    letterSpacing: 0.6,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Opcional — ingresa la nota final de la materia',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.black38,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _notaFinalCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                  ],
-                  decoration: _inputDecoration('Nota Final', 'ej: 4.2'),
-                ),
-
                 const SizedBox(height: 28),
 
                 // ── Botón guardar ──
@@ -232,6 +198,7 @@ class _MateriaFormScreenState extends State<MateriaFormScreen> {
     );
   }
 
+  // ── Decoración reutilizable para los inputs ──
   InputDecoration _inputDecoration(String label, String hint) {
     return InputDecoration(
       filled: true,

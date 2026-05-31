@@ -1,60 +1,74 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import 'package:notas_app/models/materia.dart';
 
 class MateriaService {
-  final _col = FirebaseFirestore.instance.collection('materias');
+  final _uuid = const Uuid();
+
+  // ── Lista con datos de ejemplo ──────────────
+  final List<Materia> _materias = [
+    Materia(
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      nombre: 'Calculo Diferencial',
+      semestre: '2025-1',
+      creditos: 4,
+    ),
+    Materia(
+      id: '550e8400-e29b-41d4-a716-446655440002',
+      nombre: 'Programacion Movil',
+      semestre: '2025-1',
+      creditos: 3,
+    ),
+    Materia(
+      id: '550e8400-e29b-41d4-a716-446655440003',
+      nombre: 'Ingenieria de Software II',
+      semestre: '2025-1',
+      creditos: 3,
+    ),
+  ];
 
   // ── Listar ────────────────────────────────
-  Stream<List<Materia>> getMaterias() {
-    return _col.snapshots().map(
-      (snap) => snap.docs.map((doc) => Materia.fromDoc(doc)).toList(),
-    );
+  Future<List<Materia>> getMaterias() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return List.unmodifiable(_materias);
   }
 
-  // ── Agregar ───────────────────────────────
+  // ── Guardar ───────────────────────────────
   Future<void> agregarMateria({
     required String nombre,
     required String semestre,
     required int creditos,
-    double? notaFinal,
   }) async {
-    final data = {
-      'nombre': nombre,
-      'semestre': semestre,
-      'creditos': creditos,
-    };
-    if (notaFinal != null) {
-      data['notaFinal'] = notaFinal;
-    }
-    await _col.add(data);
+    await Future.delayed(const Duration(milliseconds: 500));
+    final materia = Materia(
+      id: _uuid.v4(),
+      nombre: nombre,
+      semestre: semestre,
+      creditos: creditos,
+    );
+    _materias.add(materia);
   }
 
-  // ── Editar ────────────────────────────────
+  // ── Eliminar ──────────────────────────────
+  Future<void> eliminarMateria(String id) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    _materias.removeWhere((m) => m.id == id);
+  }
+
   Future<void> editarMateria({
     required String id,
     required String nombre,
     required String semestre,
     required int creditos,
-    double? notaFinal,
   }) async {
-    final data = {
-      'nombre': nombre,
-      'semestre': semestre,
-      'creditos': creditos,
-    };
-    if (notaFinal != null) {
-      data['notaFinal'] = notaFinal;
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _materias.indexWhere((m) => m.id == id);
+    if (index != -1) {
+      _materias[index] = Materia(
+        id: id,
+        nombre: nombre,
+        semestre: semestre,
+        creditos: creditos,
+      );
     }
-    await _col.doc(id).update(data);
-  }
-
-  // ── Eliminar ──────────────────────────────
-  Future<void> eliminarMateria(String id) async {
-    await _col.doc(id).delete();
-  }
-
-  // ── Guardar nota final ────────────────────
-  Future<void> guardarNotaFinal(String id, double nota) async {
-    await _col.doc(id).update({'notaFinal': nota});
   }
 }
